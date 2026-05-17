@@ -5,6 +5,8 @@ import { throwError } from "rxjs/internal/observable/throwError";
 import { catchError, tap } from "rxjs/internal/operators";
 import {User} from "./user.model";
 import { Router } from "@angular/router";
+import { environment } from "../../environments/environment";
+import { decryptValue } from "../core/crypto.util";
 
 export interface AuthResponseData{
     idToken: string,
@@ -19,10 +21,14 @@ export interface AuthResponseData{
 export class AuthService{
     user = new BehaviorSubject<User>(null);
     private tokenExpirationTimer: any;
+    private readonly apiKey = environment.production
+        ? decryptValue(environment.firebaseApiKey, environment.encryptionPassphrase)
+        : environment.firebaseApiKey;
+
     constructor(private http: HttpClient, private router: Router){}
 
     signUp(email: string, password: string){
-        return this.http.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBw34LDn57LAQfsT1DYEHRXM5EJugEVm9E',
+        return this.http.post<AuthResponseData>(`${environment.firebaseSignUpUrl}?key=${this.apiKey}`,
         {
             email: email,
             password: password,
@@ -44,7 +50,7 @@ export class AuthService{
     }
 
     login(email: string, password: string){
-        return this.http.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBw34LDn57LAQfsT1DYEHRXM5EJugEVm9E',
+        return this.http.post<AuthResponseData>(`${environment.firebaseSignInUrl}?key=${this.apiKey}`,
         {
             email: email,
             password: password,
